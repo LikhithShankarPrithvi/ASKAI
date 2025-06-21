@@ -18,13 +18,16 @@ client = genai.Client(api_key="AIzaSyD8jmT7tMl7Oymvl3zMoDe33DLWE86FuMU")
 
 class AskRequest(BaseModel):
     question: str
+    pageContent: str
+    pageHtml: str
 
 @app.post("/ask")
 def ask_ai(request: AskRequest):
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-flash", contents=request.question
-        )
+            model="gemini-2.5-flash", 
+            contents=request.question + "If needed this is PageContent" + request.pageContent,
+        )   
         return {"answer": response.text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

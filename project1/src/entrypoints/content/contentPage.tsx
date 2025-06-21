@@ -6,7 +6,7 @@ const ContentPage: React.FC = () => {
 			.sendMessage({ action: 'openSidePanel' })
 			.catch(console.error)
 		// For testing, you can use:
-		alert('Side panel requested!')
+		// alert('Side panel requested!')
 	}
 
 	return (

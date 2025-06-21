@@ -24,6 +24,43 @@ export default defineContentScript({
 	},
 })
 
+// Message listener for HTML extraction
+const messageListener = (message: any, sender: any, sendResponse: any) => {
+	if (message.type === 'GET_HTML') {
+		try {
+			// Get the main content instead of entire HTML for better performance
+			const mainContent =
+				document.querySelector(
+					'main, article, .content, #content, .main'
+				) || document.body
+			const html = mainContent.innerHTML
+
+			// Clean up the HTML to remove scripts and styles for security
+			const tempDiv = document.createElement('div')
+			tempDiv.innerHTML = html
+
+			// Remove script and style tags
+			const scripts = tempDiv.querySelectorAll('script, style, noscript')
+			scripts.forEach(el => el.remove())
+
+			// Get text content for better AI processing
+			const textContent = tempDiv.textContent || tempDiv.innerText || ''
+
+			sendResponse({
+				html: tempDiv.innerHTML,
+				text: textContent.trim().substring(0, 10000), // Limit to 10k chars
+			})
+		} catch (error) {
+			console.error('Error extracting HTML:', error)
+			sendResponse({ html: '', text: '' })
+		}
+	}
+	return true // keep the message channel open for async
+}
+
+// Add the message listener
+browser.runtime.onMessage.addListener(messageListener)
+
 function createUi(ctx: ContentScriptContext) {
 	return createShadowRootUi(ctx, {
 		name: 'active-tab-ui',
@@ -52,6 +89,8 @@ function createUi(ctx: ContentScriptContext) {
 		},
 		onRemove(root) {
 			root?.unmount()
+			// Clean up message listener when UI is removed
+			browser.runtime.onMessage.removeListener(messageListener)
 		},
 	})
 }
