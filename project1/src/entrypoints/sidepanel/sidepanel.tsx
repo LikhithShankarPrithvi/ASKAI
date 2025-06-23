@@ -2,6 +2,17 @@ import '../../assets/tailwind.css'
 import React, { useState, useRef, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import ReactMarkdown from 'react-markdown'
+import {
+	PaperAirplaneIcon,
+	UserCircleIcon,
+	SparklesIcon,
+} from '@heroicons/react/24/solid'
+
+const HEADER_HEIGHT = 80
+const DESC_HEIGHT = 48
+const CLEAR_HEIGHT = 40
+const INPUT_HEIGHT = 64
+const PANEL_PADDING = 16
 
 const Sidepanel = () => {
 	const [input, setInput] = useState('')
@@ -9,6 +20,7 @@ const Sidepanel = () => {
 	const [loading, setLoading] = useState(false)
 	const [html, setHtml] = useState('')
 	const [error, setError] = useState<string | null>(null)
+	const [chatSummary, setChatSummary] = useState('')
 	const messagesEndRef = useRef<HTMLDivElement>(null)
 
 	type Message = {
@@ -88,12 +100,19 @@ const Sidepanel = () => {
 			setHtml(pageContent.html)
 
 			// Prepare the request payload
+			const N = 6 // Number of recent messages to send
+			const recentMessages = updatedMessages.slice(-N).map(m => ({
+				role: m.role,
+				content: m.content,
+			}))
 			const requestPayload = {
+				summary: chatSummary,
+				recentMessages,
 				question:
 					input +
 					"Try to keep it concise unless asked to elaborate in the previous text, P.S: The Chat will be displayed in a Sidebar & Don't mention about the last sentence",
-				pageContent: pageContent.text, // Use text content for better AI processing
-				pageHtml: pageContent.html, // Include HTML if needed by your backend
+				pageContent: pageContent.text,
+				pageHtml: pageContent.html,
 			}
 
 			const controller = new AbortController()
@@ -124,6 +143,9 @@ const Sidepanel = () => {
 					timestamp: new Date(),
 				},
 			])
+			if (data.summary !== undefined) {
+				setChatSummary(data.summary)
+			}
 		} catch (err) {
 			const errorMessage =
 				err instanceof Error ? err.message : 'Error fetching response.'
@@ -149,43 +171,59 @@ const Sidepanel = () => {
 		setMessages([])
 		setError(null)
 		setResponse('(Your chat will appear here)')
+		setChatSummary('')
 	}
 
 	return (
 		<>
-			<div className='flex-1 flex flex-col justify-center items-center px-4 pb-28 mt-4'>
-				<div className='max-w-md w-full'>
-					<div
-						id='header'
-						className='shadow-sm bg-gray-300 p-4 rounded-lg mb-4'
-					>
-						<h1 className='text-2xl font-bold text-center'>
-							ASK AI ANYTHING
+			<div
+				className='flex flex-col h-screen bg-gradient-to-br from-blue-50 to-white'
+				style={{ minHeight: '100vh', padding: `${PANEL_PADDING}px` }}
+			>
+				{/* Header */}
+				<div
+					id='header'
+					className='shadow-lg bg-gradient-to-r from-blue-500 to-blue-700 rounded-2xl flex flex-col items-center justify-center mb-2'
+					style={{ height: HEADER_HEIGHT }}
+				>
+					<div className='flex items-center gap-2 mb-1'>
+						<SparklesIcon className='h-7 w-7 text-white drop-shadow' />
+						<h1 className='text-2xl font-extrabold text-white tracking-tight'>
+							Falcon – AI Assistant
 						</h1>
-						<div className='flex justify-center gap-2 text-xs text-gray-400'>
-							<span>Powered by Gemini Flash</span>
-							<span>•</span>
-							<a href='#' className='hover:underline'>
-								Help
-							</a>
-						</div>
 					</div>
-					<p className='text-gray-600 m-2'>
+					<div className='flex justify-center gap-2 text-xs text-blue-100'>
+						<span>Powered by Gemini Flash</span>
+						<span>•</span>
+						<a href='#' className='hover:underline'>
+							Help
+						</a>
+					</div>
+				</div>
+
+				{/* Description */}
+				<div
+					className='flex items-center justify-center text-gray-600 text-center mb-2 bg-white/70 rounded-xl shadow-sm'
+					style={{ height: DESC_HEIGHT }}
+				>
+					<p className='w-full'>
 						Type your question below. You can also search or ask
 						about content on the current page!
 					</p>
+				</div>
 
-					{/* Error Display */}
-					{error && (
-						<div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4'>
-							<strong>Error:</strong> {error}
-						</div>
-					)}
+				{/* Error Display */}
+				{error && (
+					<div className='bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-2 animate-fade-in'>
+						<strong>Error:</strong> {error}
+					</div>
+				)}
 
-					{/* Chat Messages Container */}
+				{/* Chat Messages Container */}
+				<div className='flex-1 flex flex-col bg-white/80 rounded-2xl shadow-md border border-blue-100 backdrop-blur-sm mb-2 overflow-hidden'>
 					<div
-						className='bg-white rounded-lg shadow p-4 min-h-[120px] mb-4'
-						style={{ maxHeight: '400px', overflowY: 'auto' }}
+						className='flex-1 overflow-y-auto p-4 space-y-3'
+						style={{ minHeight: 0 }}
 					>
 						{messages.length === 0 ? (
 							<span className='text-gray-400'>
@@ -194,21 +232,24 @@ const Sidepanel = () => {
 									: '(Your chat will appear here)'}
 							</span>
 						) : (
-							<div className='space-y-3'>
+							<>
 								{messages.map((msg, idx) => (
 									<div
 										key={idx}
-										className={`flex ${
+										className={`flex items-end ${
 											msg.role === 'user'
 												? 'justify-end'
 												: 'justify-start'
-										}`}
+										} animate-fade-in`}
 									>
+										{msg.role === 'assistant' && (
+											<UserCircleIcon className='h-6 w-6 text-blue-400 mr-2 mb-1' />
+										)}
 										<div
-											className={`max-w-[80%] rounded-lg px-3 py-2 ${
+											className={`max-w-[80%] rounded-2xl px-4 py-2 shadow transition-all duration-200 ${
 												msg.role === 'user'
-													? 'bg-blue-500 text-white'
-													: 'bg-gray-100 text-gray-800'
+													? 'bg-blue-500 text-white rounded-br-none'
+													: 'bg-gray-100 text-gray-800 rounded-bl-none border border-blue-100'
 											}`}
 										>
 											{msg.role === 'assistant' ? (
@@ -237,8 +278,8 @@ const Sidepanel = () => {
 									</div>
 								))}
 								{loading && (
-									<div className='flex justify-start'>
-										<div className='bg-gray-100 text-gray-800 rounded-lg px-3 py-2'>
+									<div className='flex justify-start animate-pulse'>
+										<div className='bg-gray-100 text-gray-800 rounded-2xl px-4 py-2'>
 											<span className='text-sm'>
 												Thinking...
 											</span>
@@ -246,44 +287,56 @@ const Sidepanel = () => {
 									</div>
 								)}
 								<div ref={messagesEndRef} />
-							</div>
+							</>
 						)}
 					</div>
+				</div>
 
-					{/* Clear Chat Button */}
+				{/* Clear Chat Button */}
+				<div
+					className='flex items-center justify-center'
+					style={{ height: CLEAR_HEIGHT }}
+				>
 					{messages.length > 0 && (
-						<div className='flex justify-center mb-4'>
-							<button
-								onClick={clearChat}
-								className='text-sm text-gray-500 hover:text-gray-700 underline'
-							>
-								Clear Chat
-							</button>
-						</div>
+						<button
+							onClick={clearChat}
+							className='text-sm text-blue-400 hover:text-blue-600 underline transition-colors duration-150'
+						>
+							Clear Chat
+						</button>
 					)}
 				</div>
-			</div>
-			<form
-				className='fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-2'
-				style={{ zIndex: 10 }}
-				onSubmit={handleSubmit}
-			>
-				<input
-					type='text'
-					placeholder='Type your question...'
-					className='flex-1 rounded-full border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400'
-					value={input}
-					onChange={e => setInput(e.target.value)}
-					disabled={loading}
-				/>
-				<button
-					type='submit'
-					className='bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-full transition disabled:opacity-50'
-					disabled={loading || !input.trim()}
+
+				{/* Input Form */}
+				<form
+					className='w-full bg-white/90 border-t border-blue-100 px-4 py-3 flex items-center gap-2 shadow-lg backdrop-blur rounded-xl'
+					style={{ height: INPUT_HEIGHT }}
+					onSubmit={handleSubmit}
 				>
-					{loading ? 'Sending...' : 'Send'}
-				</button>
-			</form>
+					<input
+						type='text'
+						placeholder='Type your question...'
+						className='flex-1 rounded-full border border-blue-200 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white/80 shadow-sm transition-all duration-150'
+						value={input}
+						onChange={e => setInput(e.target.value)}
+						disabled={loading}
+					/>
+					<button
+						type='submit'
+						className='bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded-full transition disabled:opacity-50 flex items-center gap-1 shadow-md focus:ring-2 focus:ring-blue-300 focus:outline-none'
+						disabled={loading || !input.trim()}
+					>
+						{loading ? (
+							<span>Sending...</span>
+						) : (
+							<>
+								<span>Send</span>
+								<PaperAirplaneIcon className='h-5 w-5 ml-1 -rotate-45' />
+							</>
+						)}
+					</button>
+				</form>
+			</div>
 		</>
 	)
 }
