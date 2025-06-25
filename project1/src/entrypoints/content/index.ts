@@ -46,9 +46,12 @@ const messageListener = (message: any, sender: any, sendResponse: any) => {
 			// Get text content for better AI processing
 			const textContent = tempDiv.textContent || tempDiv.innerText || ''
 
+			// Normalize whitespace: replace multiple spaces/newlines/tabs with a single space
+			const normalizedText = textContent.replace(/\s+/g, ' ').trim()
+
 			sendResponse({
 				html: tempDiv.innerHTML,
-				text: textContent.trim().substring(0, 10000), // Limit to 10k chars
+				text: normalizedText.substring(0, 10000), // Limit to 10k chars
 			})
 		} catch (error) {
 			console.error('Error extracting HTML:', error)

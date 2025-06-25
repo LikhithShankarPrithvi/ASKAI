@@ -8,6 +8,7 @@ export default defineConfig({
 	manifest: {
 		permissions: ['activeTab', 'scripting', 'sidePanel'],
 		action: {},
+		host_permissions: ['https://askai-dfup.onrender.com/'],
 		web_accessible_resources: [
 			// Since the content script isn't listed in the manifest, we have to
 			// manually allow the CSS file to load.

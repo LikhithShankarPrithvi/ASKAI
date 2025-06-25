@@ -110,7 +110,7 @@ const Sidepanel = () => {
 				recentMessages,
 				question:
 					input +
-					"Try to keep it concise unless asked to elaborate in the previous text, P.S: The Chat will be displayed in a Sidebar & Don't mention about the last sentence",
+					" Try to keep it concise unless asked to elaborate in the previous text, P.S: The Chat will be displayed in a Sidebar & Don't mention about the last sentence",
 				pageContent: pageContent.text,
 				pageHtml: pageContent.html,
 			}
@@ -118,7 +118,7 @@ const Sidepanel = () => {
 			const controller = new AbortController()
 			const timeoutId = setTimeout(() => controller.abort(), 30000) // 30 second timeout
 
-			const res = await fetch('http://localhost:8000/ask', {
+			const res = await fetch('https://askai-dfup.onrender.com/ask', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(requestPayload),

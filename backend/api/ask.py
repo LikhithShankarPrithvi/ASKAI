@@ -37,11 +37,14 @@ def ask_ai(request: AskRequest):
         )
         for msg in request.recentMessages or []:
             context += f"{msg.get('role', 'user')}: {msg.get('content', '')}\n"
-        context += f"User: {request.question}\n"
+        context += f"User's Question : {request.question}\n"
+
+        context+="--END--, For context adding the webpage content here, use only if needed."
         if request.pageContent:
             context += f"PageContent: {request.pageContent}\n"
-        context += "\nAs an AI assistant, answer ONLY the user's latest question above. Do NOT summarize the conversation."
+        context += "\nAs an AI assistant, answer ONLY the user's question above. DO NOT summarize the conversation"
         # Ask for answer
+        print(context)
         response = client.models.generate_content(
             model="gemini-2.5-flash",
             contents=context,
